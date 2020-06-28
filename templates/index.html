@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Image Captioning</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	
+
+<style type="text/css">
+	
+.heading{
+    font-weight: 100;
+    font-size: 4em;
+    text-shadow: 1px 1px 5px black;
+}
+img{
+	height: 90%;
+	width: 100%;
+}
+.text{
+	font-size: 32px;
+	font-style: italic;
+}
+
+.jumbotron {
+  position: relative;
+  overflow: hidden;
+  background-color:black;
+}
+.jumbotron video {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  width:100%;
+  height:100%;
+  /*  object-fit is not supported on IE  */
+  object-fit: cover;
+  opacity:0.5;
+}
+.jumbotron .container {
+  z-index: 2;
+  position: relative;
+  color: antiquewhite;
+}
+
+</style>
+
+</head>
+<body onload="noloading()">
+	<div class="container">
+		<div class="jumbotron ">
+			<video autoplay muted loop >    
+				<source src="static/background.mp4" type="video/mp4">
+			</video>
+	        <div class="container">
+	            <h1 class="heading">Image Captioning</h1> 
+				<p>Upload your Image to generate a caption..</p> 
+				<p>Upload your Video and keyword to extract videos that you want..</p> 
+	        </div>
+		</div>
+		
+	
+	
+
+		<form class="form-inline" enctype="multipart/form-data" action="/image" method="POST">
+			<div class="form-group mr-sm-3 mb-2">
+				<div class="custom-file">
+					<input type="file" class="custom-file-input" accept="image/x-png,image/gif,image/jpeg" name="image">
+					<label class="custom-file-label" for="customFile">Choose Image</label>
+				</div>
+			</div>
+	        <button type="submit" class="btn btn-primary mb-2"> Submit</button>
+		</form>
+		
+
+		<form id="video-upload" class="form-inline" enctype="multipart/form-data" action="/video" method="POST">
+			<div class="form-group mb-2">
+				<div class="custom-file">
+					<input type="file" class="custom-file-input" accept="video/mp4,video/x-m4v,video/*" name="video">
+					<label class="custom-file-label" for="customFile">Choose Video</label>
+				</div>
+			</div>
+			<div class="form-group mx-sm-3 mb-2">
+			  <label for="text" class="sr-only">Keyword</label>
+			  <input type="text" class="form-control" name="keyword" placeholder="Enter your keyword">
+			</div>
+			<button onclick="loading()" type="submit" class="btn btn-primary mb-2">Submit</button>
+		  </form>
+
+	    <br>
+		
+
+		{% if image_results %}
+			<div class="card" style="width: 18rem;">
+				<img class="card-img-top" src="{{image_results.image}}" alt="Card image cap">
+				<div class="card-body">
+					<h5 class="card-title">Generated Caption :</h5>
+					<p class="card-text"><i> {{image_results.description}}</i></p>
+				</div>
+			</div>
+		{% endif %}
+		{% block content %}
+			{% if video_results %}
+				{% if video_results.timeline|length > 0 %}
+					<ul class="list-group w-50">
+					{%for i in video_results.timeline%}
+						<li class="list-group-item d-flex justify-content-between align-items-center">From <span class="badge badge-primary badge-pill">{{i[0]/1000}}s</span> to <span class="badge badge-primary badge-pill">{{i[1]/1000}}s</span></li>
+					{%endfor%}
+					</ul>
+					{%for i in video_results.link_subclips%}
+						<video width="320" height="240" controls autoplay muted loop>
+							<source src="{{i}}" type="video/mp4">
+						</video>
+					{%endfor%}
+				{% else %}
+					<div class="alert alert-dark" role="alert">
+						Your object is not appear in this video!
+					</div>
+				{% endif %}
+			{% endif %}
+		{% endblock content %}
+
+	</div>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+</body>
+</html>
