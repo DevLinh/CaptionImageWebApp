@@ -7,6 +7,7 @@ create new virtual environment
 activate your venv
 
 conda install pandas pyodbc opencv  imageio numpy flask
+
 moviepy: pip install moviepy==1.0.1
 matpotlib: pip install matpotlib==3.3.0
 pip install tensorflow==1.14
