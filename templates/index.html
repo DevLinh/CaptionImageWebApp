@@ -1,127 +1,385 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Image Captioning</title>
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-	
+  <head>
+    <title>Image Captioning</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
 
-<style type="text/css">
-	
-.heading{
-    font-weight: 100;
-    font-size: 4em;
-    text-shadow: 1px 1px 5px black;
-}
-img{
-	height: 90%;
-	width: 100%;
-}
-.text{
-	font-size: 32px;
-	font-style: italic;
-}
+    <link
+      href="https://www.jqueryscript.net/css/jquerysctipttop.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
+      href="/static/build/vendor/fontawesome-free/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/static/build/css/bootstrap-datetimepicker.min.css"
+    />
 
-.jumbotron {
-  position: relative;
-  overflow: hidden;
-  background-color:black;
-}
-.jumbotron video {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  width:100%;
-  height:100%;
-  /*  object-fit is not supported on IE  */
-  object-fit: cover;
-  opacity:0.5;
-}
-.jumbotron .container {
-  z-index: 2;
-  position: relative;
-  color: antiquewhite;
-}
+    <style type="text/css">
+      .heading {
+        font-weight: 100;
+        font-size: 4em;
+        text-shadow: 1px 1px 5px black;
+      }
 
-</style>
+      img {
+        height: 90%;
+        width: 100%;
+      }
 
-</head>
-<body onload="noloading()">
-	<div class="container">
-		<div class="jumbotron ">
-			<video autoplay muted loop >    
-				<source src="static/background.mp4" type="video/mp4">
-			</video>
-	        <div class="container">
-	            <h1 class="heading">Image Captioning</h1> 
-				<p>Upload your Image to generate a caption..</p> 
-				<p>Upload your Video and keyword to extract videos that you want..</p> 
-	        </div>
-		</div>
-		
-	
-	
+      .text {
+        font-size: 32px;
+        font-style: italic;
+      }
 
-		<form class="form-inline" enctype="multipart/form-data" action="/image" method="POST">
-			<div class="form-group mr-sm-3 mb-2">
-				<div class="custom-file">
-					<input type="file" class="custom-file-input" accept="image/x-png,image/gif,image/jpeg" name="image">
-					<label class="custom-file-label" for="customFile">Choose Image</label>
-				</div>
-			</div>
-	        <button type="submit" class="btn btn-primary mb-2"> Submit</button>
-		</form>
-		
+      .jumbotron {
+        position: relative;
+        overflow: hidden;
+        background-color: black;
+      }
 
-		<form id="video-upload" class="form-inline" enctype="multipart/form-data" action="/video" method="POST">
-			<div class="form-group mb-2">
-				<div class="custom-file">
-					<input type="file" class="custom-file-input" accept="video/mp4,video/x-m4v,video/*" name="video">
-					<label class="custom-file-label" for="customFile">Choose Video</label>
-				</div>
-			</div>
-			<div class="form-group mx-sm-3 mb-2">
-			  <label for="text" class="sr-only">Keyword</label>
-			  <input type="text" class="form-control" name="keyword" placeholder="Enter your keyword">
-			</div>
-			<button onclick="loading()" type="submit" class="btn btn-primary mb-2">Submit</button>
-		  </form>
+      .jumbotron video {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /*  object-fit is not supported on IE  */
+        object-fit: cover;
+        opacity: 0.5;
+      }
 
-	    <br>
-		
+      .jumbotron .container {
+        z-index: 2;
+        position: relative;
+        color: antiquewhite;
+      }
+    </style>
+  </head>
 
-		{% if image_results %}
-			<div class="card" style="width: 18rem;">
-				<img class="card-img-top" src="{{image_results.image}}" alt="Card image cap">
-				<div class="card-body">
-					<h5 class="card-title">Generated Caption :</h5>
-					<p class="card-text"><i> {{image_results.description}}</i></p>
-				</div>
-			</div>
-		{% endif %}
-		{% block content %}
-			{% if video_results %}
-				{% if video_results.timeline|length > 0 %}
-					<ul class="list-group w-50">
-					{%for i in video_results.timeline%}
-						<li class="list-group-item d-flex justify-content-between align-items-center">From <span class="badge badge-primary badge-pill">{{i[0]/1000}}s</span> to <span class="badge badge-primary badge-pill">{{i[1]/1000}}s</span></li>
-					{%endfor%}
-					</ul>
-					{%for i in video_results.link_subclips%}
-						<video width="320" height="240" controls autoplay muted loop>
-							<source src="{{i}}" type="video/mp4">
-						</video>
-					{%endfor%}
-				{% else %}
-					<div class="alert alert-dark" role="alert">
-						Your object is not appear in this video!
-					</div>
-				{% endif %}
-			{% endif %}
-		{% endblock content %}
+  <body>
+    <div class="container">
+      <div class="jumbotron">
+        <video autoplay muted loop>
+          "
+          <source
+            src="{{url_for('static', filename='background.mp4')}}"
+            type="video/mp4"
+          />
+        </video>
+        <div class="container">
+          <h1 class="heading">Image Captioning</h1>
+          <p>Upload your Video and keyword to extract videos that you want..</p>
+          <form action="/manage">
+            <button type="submit" class="btn btn-primary mb-2">Manage</button>
+          </form>
+        </div>
+      </div>
 
-	</div>
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-</body>
+      <form
+        id="video-upload"
+        class="form-inline shadow-lg p-3 mb-5 bg-white rounded"
+        enctype="multipart/form-data"
+        action="/process"
+        method="POST"
+      >
+        <div class="list-group shadow-sm bg-white rounded">
+          <div class="form-check mx-sm-3 mb-2">
+            <i class="fa fa-video" style="color:#007bff; padding-right: 3px;"></i>
+            <input
+              type="checkbox"
+              class="form-check-input"
+              name="check"
+              id="allCamera"
+              value="0"
+            />
+            <label class="form-check-label" for="allCamera">All Camera </label>
+          </div>
+          <div class="form-check mx-sm-3 mb-2">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              name="check"
+              id="camera1"
+              value="1"
+            />
+            <label class="form-check-label" for="camera1">Camera 1</label>
+          </div>
+          <div class="form-check mx-sm-3 mb-2">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              name="check"
+              id="camera2"
+              value="2"
+            />
+            <label class="form-check-label" for="camera2">Camera 2</label>
+          </div>
+          <div class="form-check mx-sm-3 mb-2">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              name="check"
+              id="camera3"
+              value="3"
+            />
+            <label class="form-check-label" for="camera3">Camera 3</label>
+          </div>
+        </div>
+
+        <div class="form-group mx-sm-3 mb-2">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <div class="input-group date">
+                  <input
+                    autocomplete="off"
+                    type="text"
+                    class="form-control"
+                    placeholder="Ngày bắt đầu"
+                    name="dtStart"
+                    id="dtStart"
+                  />
+                  <span class="input-group-append">
+                    <div class="input-group-text bg-transparent">
+                      <i class="fa fa-calendar"></i>
+                    </div>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group mx-sm-3 mb-2">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <div class="input-group date">
+                  <input
+                    autocomplete="off"
+                    type="text"
+                    class="form-control"
+                    placeholder="Ngày kết thúc"
+                    id="dtEnd"
+                    name="dtEnd"
+                  />
+                  <span class="input-group-append">
+                    <div class="input-group-text bg-transparent">
+                      <i class="fa fa-calendar"></i>
+                    </div>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group mx-sm-3 mb-2">
+          <label for="text" class="sr-only">Keyword</label>
+          <input
+            type="text"
+            class="form-control"
+            name="keyword"
+            placeholder="Enter your keyword"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary mb-2">
+          Submit
+        </button>
+      </form>
+      <br />
+
+      {% block content %} {% if results %}
+      <div class="card">
+        <h5 class="card-header">Results</h5>
+        <div class="card-body">
+          <h5 class="card-title">Keyword: {{results.keyword}}</h5>
+          <p class="card-text">
+            From: {{results.dtStart}} to {{results.dtEnd}}
+          </p>
+          {%if '0' in results.checks%}
+          <a href="#" class="btn btn-primary"
+            ><i class="fa fa-video-camera"></i> All Cameras</a
+          >
+          {%else%} {%for camera in results.checks%}
+          <a href="#" class="btn btn-primary"
+            ><i class="fa fa-video-camera"></i> Camera{{camera}}</a
+          >
+          {%endfor%} {%endif%}
+        </div>
+      </div>
+      <div id="results">
+        {%for key in results.timeline%}
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fa fa-camera" aria-hidden="true"></i> {{key}}
+            </h6>
+          </div>
+          <div class="card-body">
+            {%for key_item in results.timeline[key]%}
+            <div class="card" style="width: 25rem;">
+              <video
+                id="{{key|trim}}_{{key_item}}"
+                class="card-img-top"
+                controls
+                muted
+              >
+                <source
+                  src="/static/{{key|trim}}/{{key_item}}"
+                  type="video/mp4"
+                />
+              </video>
+              <div class="card-body timeline">
+                <h5 class="card-title">
+                  <i class="fa fa-file-video" aria-hidden="true"></i>
+                  {{key_item}}
+                </h5>
+                <ul class="list-group">
+                  {%for item in results.timeline[key][key_item]%}
+                  <li
+                    value="{{key|trim}}_{{key_item}}"
+                    class="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    From
+                    <span class="badge badge-primary badge-pill"
+                      >{{item[0]/1000}}s</span
+                    >
+                    to
+                    <span class="badge badge-primary badge-pill"
+                      >{{item[-1]/1000}}s</span
+                    ><a
+                      start="{{item[0]}}"
+                      stop="{{item[-1]}}"
+                      class="btn btn-primary btn-md active"
+                      role="button"
+                      aria-pressed="true"
+                      >Play <i class="fa fa-play-circle"></i
+                    ></a>
+                  </li>
+                  {%endfor%}
+                </ul>
+              </div>
+            </div>
+            {%endfor%}
+          </div>
+        </div>
+        {%endfor%}
+      </div>
+      {% endif %} {% endblock content %}
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment-with-locales.min.js"
+      type="text/javascript"
+    ></script>
+    <script src="/static/build/js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript">
+      $(function () {
+        $("#dtStart").datetimepicker({
+          locale: "vi",
+          format: "YYYY-MM-DD HH:mm",
+        });
+        $("#dtEnd").datetimepicker({
+          locale: "vi",
+          format: "YYYY-MM-DD HH:mm",
+          useCurrent: false, //Important! See issue #1075
+        });
+        $("#dtStart").data("DateTimePicker").maxDate(moment());
+        $("#dtStart").on("dp.change", function (e) {
+          $("#dtEnd").data("DateTimePicker").minDate(e.date);
+          $("#dtEnd").data("DateTimePicker").maxDate(moment());
+        });
+        $("#dtEnd").on("dp.change", function (e) {
+          $("#dtStart").data("DateTimePicker").maxDate(e.date);
+        });
+      });
+
+      $("#allCamera").click(function () {
+        $("input[type=checkbox]").prop("checked", $(this).prop("checked"));
+        $("input[type=checkbox]").click(function () {
+          if (!$(this).prop("checked")) {
+            $("#allCamera").prop("checked", false);
+          }
+        });
+      });
+    </script>
+    <script type="text/javascript">
+      var playButtons = document.querySelectorAll("a");
+      function jumpToTime(time) {
+        v.currentTime = time;
+      }
+
+      var list = document.querySelector("#results");
+
+      var playButtons = list.querySelectorAll("a");
+
+      for (var i = 0; i < playButtons.length; i++) {
+        playButtons[i].addEventListener(
+          "click",
+          function (event) {
+            event.preventDefault();
+            var pause;
+            var currentButton = event.currentTarget;
+            var start = currentButton.getAttribute("start");
+            var stop = currentButton.getAttribute("stop") - start;
+            var video = document.getElementById(
+              currentButton.parentNode.getAttribute("value")
+            );
+            currentButton.classList.remove("btn-primary");
+            currentButton.classList.add("btn-danger");
+            clearTimeout(pause);
+            video.currentTime = start / 1000;
+            video.play();
+            currentButton.innerHTML = "Playing...";
+            pause = setTimeout(function (event) {
+              video.pause();
+              currentButton.innerHTML =
+                'Play <i class="fa fa-play-circle"></i>';
+              currentButton.classList.remove("btn-danger");
+              currentButton.classList.add("btn-primary");
+            }, stop);
+          },
+          false
+        );
+      }
+    </script>
+  </body>
 </html>

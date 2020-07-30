@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model, Model
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
-
+import datetime
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -107,13 +107,13 @@ def same_rate(prev, cur):
 #initialize the connection to SQL server
 conn = pyodbc.connect('Driver={SQL Server};'
                       'Server=LAPTOP-OELBU86R\SQLEXPRESS;'
-                      'Database=CaptionImage;'
+                      'Database=AppDatabase;'
                       'Trusted_Connection=yes;')
 #define the cursor in pyodbc
 cursor = conn.cursor()
 
 #generate captions from video and optimize them, save them to server SQL
-def caption_this_video(input_video, similar_rate):
+def caption_this_video(input_video, similar_rate, camera):
     #create temporary folder called data to save the temporary caption image
     try:
         #creating a folder named data
@@ -132,59 +132,52 @@ def caption_this_video(input_video, similar_rate):
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     seconds = float(frame_number / fps)
     duration = int(seconds*1000)
+    video_name = os.path.basename(input_video)
+    print('Processing video : '+ video_name)
     print('frame num = ' + str(frame_number) + ' fps = ' + str(fps) + ' duration = ' + str(duration) + 'ms')
-    video_name = get_video_name(input_video, '.mp4')
-    print('Video name: ' + video_name + '.mp4')
-    video_id = video_name+"_"+str(fps)+"fps"+str(duration)+"mslong"
-    print(video_id)
-    check_available_query = '''SELECT count(*) FROM Caption WHERE VideoId = ?'''
-    cursor.execute(check_available_query,video_id)
-    rowcount = cursor.fetchone()[0]
-    if rowcount == 0:
-        count = 0
-        start = 0
-        stop = 1
-        prev_caption = ''
-        #Insert query
-        insert_records = '''INSERT INTO Caption(VideoId ,Start, Stop, Decription) VALUES(?,?,?,?)'''
-        while(True):
-            ret, frame = cap.read()
-            if ret:
-                cap.set(cv2.CAP_PROP_POS_MSEC, (count*500))
-                temp_path = './data/' + video_name + '.jpg'
-                cv2.imwrite(temp_path, frame)
-                current_caption = caption_this_image(temp_path)
-                r = same_rate(current_caption, prev_caption)
-                if count == 0:
-                    print('Start at: '  + str(count*500) + 'ms :' + current_caption)
-                    prev_caption = current_caption
-                elif (count > 0) and (r >= similar_rate):
-                    delta = duration-(count*500)
-                    if (delta < 500 and delta > 0):
-                        cursor.execute(insert_records, video_id,str(start*500) + 'ms' , str(duration) + 'ms', current_caption)
-                        conn.commit()
-                        print('Done')
-                    else:
-                        print('skip-------------------------------------------------------' + str(count))
-                else:
-                    stop = count
-                    cursor.execute(insert_records, video_id,str(start*500) + 'ms' , str((stop)*500) + 'ms', prev_caption)
+
+
+    count = 0
+    start = 0
+    stop = 1
+    prev_caption = ''
+    #Insert query
+    insert_records = '''INSERT INTO data(camera ,created_dt, filename, start, stop, description) VALUES(?,?,?,?,?,?)'''
+    while(True):
+        ret, frame = cap.read()
+        if ret:
+            cap.set(cv2.CAP_PROP_POS_MSEC, (count*500))
+            temp_path = './data/temp.jpg'
+            cv2.imwrite(temp_path, frame)
+            current_caption = caption_this_image(temp_path)
+            r = same_rate(current_caption, prev_caption)
+            if count == 0:
+                print('Start : ' + current_caption)
+                prev_caption = current_caption
+            elif (count > 0) and (r >= similar_rate):
+                delta = duration-(count*500)
+                if (delta < 500 and delta > 0):
+                    cursor.execute(insert_records, camera, datetime.datetime.fromtimestamp(os.path.getctime(input_video)), video_name ,str(start*500) + 'ms' , str(stop*500) + 'ms', current_caption)
                     conn.commit()
-                    print(str(count*500) + 'ms :' + current_caption)
-                    start = stop
-                    prev_caption = current_caption
-                    
-                os.remove(temp_path)
-                count += 1
+                    print('Done')
+                else:
+                    print('skip-------------------------------------------------------' + str(count))
             else:
-                print('DONE 100%')
-                break
-        cap.release()
-        cv2.destroyAllWindows()
-        return video_id
-    else:
-        print('this video is already processed')
-        return video_id
+                stop = count
+                cursor.execute(insert_records, camera, datetime.datetime.fromtimestamp(os.path.getctime(input_video)) , video_name,str(start*500) + 'ms' , str(stop*500) + 'ms', prev_caption)
+                conn.commit()
+                print(str(count*500) + 'ms :' + current_caption)
+                start = stop
+                prev_caption = current_caption
+                    
+            os.remove(temp_path)
+            count += 1
+        else:
+            print('DONE 100%')
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 import re
 from functools import reduce
@@ -215,20 +208,54 @@ def get_timeline(keyword, video_id):
         timeline.append(int(end))
     timeline = split(timeline, 'break')
     return timeline
+#generate_query_by_cameras(['1', '3'], 'SELECT * FROM data WHERE ', ' created_dt >= ? AND created_dt <= ? AND desctiption like ?')
+#>>>'SELECT * FROM data WHERE  camera = Camera1 AND camera = Camera3 AND created_dt >= ? AND created_dt <= ? AND desctiption like ?'
+def generate_query_by_cameras(cameras, pref, suff):
+    for camera in cameras:
+        if camera != cameras[-1]:
+            pref = pref + ' camera = \'Camera' + camera + '\' OR'
+        else:
+            pref = pref + ' camera = \'Camera' + camera + '\' AND'
+    return pref + suff
 
-import shutil
-from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-from moviepy.editor import VideoFileClip, concatenate_videoclips
+def get_results(keyword, cameras, start_dt, end_dt):
+    if '0' in cameras:
+        print('ALL')
+        query = '''SELECT * FROM data WHERE created_dt >= ? AND created_dt <= ? AND description like ?'''
+        cursor.execute(query, start_dt, end_dt, '%{}%'.format(keyword))
+        rows = cursor.fetchall()
+        return process_rows(rows)
+    else:
+        #query = generate_query_by_cameras(cameras, 'SELECT * FROM data WHERE ', ' created_dt >= ? AND created_dt <= ? AND desctiption like ?')
+        query = generate_query_by_cameras(cameras, "SELECT * FROM data WHERE ", " created_dt >= ? AND created_dt <= ? AND description like ?")
+        print(query)
+        cursor.execute(query, start_dt, end_dt, '%{}%'.format(keyword))
+        #cursor.execute(query, '%{}%'.format(keyword))
+        rows = cursor.fetchall()
+        return process_rows(rows)
 
-def process_video(path, timeline, keyword):
-    video_name = get_video_name(path, '.mp4')
-    link_subclips = []
-    for t in timeline:
-        if len(t) > 1:
-            starttime = t[0]/1000
-            endtime = t[-1]/1000
-            targetname="static/"+video_name+str(timeline.index(t)+1)+"_"+keyword+".mp4"
-            ffmpeg_extract_subclip(path, starttime, endtime, targetname)
-            link_subclips.append(targetname)
-    return link_subclips
-            
+def process_rows(rows):
+    timeline = {}
+    for row in rows:
+            camera = row.camera
+            filename = row.filename
+            start = re.sub("[^0-9]", "",row.start)
+            end = re.sub("[^0-9]", "",row.stop)
+            if camera in timeline:
+                if filename in timeline[camera]:
+                    if (int(start) - timeline[camera][filename][-1]) >= 2000:
+                        timeline[camera][filename].append('break')
+                        timeline[camera][filename].append(int(start))
+                    else:
+                        if int(start) not in timeline[camera][filename]:
+                            timeline[camera][filename].append(int(start))
+                    timeline[camera][filename].append(int(end))
+                else:
+                    timeline[camera][filename] = [int(start), int(end)]
+            else:
+                timeline[row.camera] = {}
+                timeline[row.camera][row.filename] = [int(start), int(end)]
+    for key in timeline:
+        for item_key in timeline[key]:
+            timeline[key][item_key] = split(timeline[key][item_key], 'break')
+    return timeline
