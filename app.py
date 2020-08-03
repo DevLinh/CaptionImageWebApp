@@ -55,10 +55,13 @@ def manage():
         diff = cur
     else:
         diff = differ(cur, prev)
+    up_to_date = (prev == full_list)
     loading = {
         'list': full_list,
         'diff': diff
     }
+    print(up_to_date)
+    print(prev)
     return render_template('manage.html', data=loading)
 
 

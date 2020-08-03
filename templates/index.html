@@ -98,7 +98,6 @@
       >
         <div class="list-group shadow-sm bg-white rounded">
           <div class="form-check mx-sm-3 mb-2">
-            <i class="fa fa-video" style="color:#007bff; padding-right: 3px;"></i>
             <input
               type="checkbox"
               class="form-check-input"
@@ -149,7 +148,7 @@
                     autocomplete="off"
                     type="text"
                     class="form-control"
-                    placeholder="Ngày bắt đầu"
+                    placeholder="Start time"
                     name="dtStart"
                     id="dtStart"
                   />
@@ -172,7 +171,7 @@
                     autocomplete="off"
                     type="text"
                     class="form-control"
-                    placeholder="Ngày kết thúc"
+                    placeholder="End time"
                     id="dtEnd"
                     name="dtEnd"
                   />
@@ -228,49 +227,53 @@
               <i class="fa fa-camera" aria-hidden="true"></i> {{key}}
             </h6>
           </div>
-          <div class="card-body">
+          <div class="row">
             {%for key_item in results.timeline[key]%}
-            <div class="card" style="width: 25rem;">
-              <video
-                id="{{key|trim}}_{{key_item}}"
-                class="card-img-top"
-                controls
-                muted
-              >
-                <source
-                  src="/static/{{key|trim}}/{{key_item}}"
-                  type="video/mp4"
-                />
-              </video>
-              <div class="card-body timeline">
-                <h5 class="card-title">
-                  <i class="fa fa-file-video" aria-hidden="true"></i>
-                  {{key_item}}
-                </h5>
-                <ul class="list-group">
-                  {%for item in results.timeline[key][key_item]%}
-                  <li
-                    value="{{key|trim}}_{{key_item}}"
-                    class="list-group-item d-flex justify-content-between align-items-center"
+            <div class="col-sm-6">
+              <div class="card">
+                <div class="card-body">
+                  <video
+                    id="{{key|trim}}_{{key_item}}"
+                    class="card-img-top"
+                    controls
+                    muted
                   >
-                    From
-                    <span class="badge badge-primary badge-pill"
-                      >{{item[0]/1000}}s</span
-                    >
-                    to
-                    <span class="badge badge-primary badge-pill"
-                      >{{item[-1]/1000}}s</span
-                    ><a
-                      start="{{item[0]}}"
-                      stop="{{item[-1]}}"
-                      class="btn btn-primary btn-md active"
-                      role="button"
-                      aria-pressed="true"
-                      >Play <i class="fa fa-play-circle"></i
-                    ></a>
-                  </li>
-                  {%endfor%}
-                </ul>
+                    <source
+                      src="/static/{{key|trim}}/{{key_item}}"
+                      type="video/mp4"
+                    />
+                  </video>
+                  <div class="card-body timeline">
+                    <h5 class="card-title">
+                      <i class="fa fa-file-video" aria-hidden="true"></i>
+                      {{key_item}}
+                    </h5>
+                    <ul class="list-group">
+                      {%for item in results.timeline[key][key_item]%}
+                      <li
+                        value="{{key|trim}}_{{key_item}}"
+                        class="list-group-item d-flex justify-content-between align-items-center"
+                      >
+                        From
+                        <span class="badge badge-primary badge-pill"
+                          >{{item[0]/1000}}s</span
+                        >
+                        to
+                        <span class="badge badge-primary badge-pill"
+                          >{{item[-1]/1000}}s</span
+                        ><a
+                          start="{{item[0]}}"
+                          stop="{{item[-1]}}"
+                          class="btn btn-primary btn-md active"
+                          role="button"
+                          aria-pressed="true"
+                          >Play <i class="fa fa-play-circle"></i
+                        ></a>
+                      </li>
+                      {%endfor%}
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
             {%endfor%}
