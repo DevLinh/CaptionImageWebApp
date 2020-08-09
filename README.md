@@ -3,13 +3,13 @@
 install Anaconda on your PC, open anaconda prompt
 
 create new virtual environment:
->> conda create -n captionenv python=3.6 pandas opencv numpy flask spyder theano
+>> conda create -n captionenv python=3.6 pandas opencv numpy flask spyder theano matpotlib
 
 activate your venv:
 >> conda activate captionenv
 
 then install the following packages
->> pip install matpotlib==3.3.0 tensorflow==1.14 keras==2.2.5
+>> pip install tensorflow==1.14 keras==2.2.5
 
 
 run DBscripts in SQL Server Management to create AppDatabase
