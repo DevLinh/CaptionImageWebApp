@@ -9,7 +9,7 @@ activate your venv:
 >> conda activate captionenv
 
 then install the following packages
-pip install matpotlib==3.3.0 tensorflow==1.14 keras==2.2.5
+>> pip install matpotlib==3.3.0 tensorflow==1.14 keras==2.2.5
 
 
 run DBscripts in SQL Server Management to create AppDatabase
@@ -19,6 +19,6 @@ update your UPLOAD_FOLDER to your video or camera folder
 
 change directory to this folder
 
-python app.py
+>> python app.py
 
 open your web browser and go test
