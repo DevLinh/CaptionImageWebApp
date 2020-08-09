@@ -1,17 +1,16 @@
 # CaptionImageWebApp
 
-install Anaconda on your PC
+install Anaconda on your PC, open anaconda prompt
 
-create new virtual environment
+create new virtual environment:
+>> conda create -n captionenv python=3.6 pandas opencv numpy flask spyder theano
 
-activate your venv
+activate your venv:
+>> conda activate captionenv
 
-conda install pandas pyodbc opencv  imageio numpy flask
-conda install spyder
-conda install theano
-matpotlib: pip install matpotlib==3.3.0
-pip install tensorflow==1.14
-pip install keras==2.2.5
+then install the following packages
+pip install matpotlib==3.3.0 tensorflow==1.14 keras==2.2.5
+
 
 run DBscripts in SQL Server Management to create AppDatabase
 
